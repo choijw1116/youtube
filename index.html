@@ -5,5 +5,38 @@ npm = package manager
 npm은 nodejs와 같이 사용해야한다. npm이 nodejs와 상호작용을 할 수 있게 해주기 떄문이다.
 nodejs를 설치하면 npm이 같이 설치 된다
 /*json = 프로그래머가 파일에 정보를 저장하기 위해 만든 방식중 하나*/
+node-modules 는 npm으로 설치한 모든 패키지가 저장되는 곳이다
+dependencies는 프로그램이 작동될때 필요한 패키지들 즉, 모듈들을 말함
+node_modules와 packagelock.json을 다 삭제하고 npm i를 실행했을때 npm이 package.json을 읽고 dependencies안에 있는 express를 찾아서 그안에 있는 모듈들을 알아서 설치해준다
 
+package lock json은 패키지들을 안전하게 관리해준다.
+패키지가 수정되었는지 해시값으로 체크해줌
+
+npm install 할때는 package.json을 닫고 실행해줘야한다.->npm이 자동으로 package.json을 수정하기 떄문!그러면 버전이 맞지 않게 될 수 도 있다.
+
+
+Bable
+bable은 자바스크립트 컴파일러
+nodejs는 우리가 작성한 자바스크립트를 이해한다. 하지만 nodeJS가 이해못하는 최신 자바스크립트 코드가 있다. -> 두가지 선택지
+1. nodejs가 이해하는 자바스크립트만 쓰거나
+2. babel을 쓰거나
+
+babel은 우리가 작성한 최신자바스크립트를 컴파일 해주는 역할을 한다. -> nodeJS가 자바스크립트를 문제없이 이해하도록 변화시켜준다는 뜻이다.
+-> 최신 자바스크립트를 사용하기 위해 babel을 설치하면 babel을 설정해주어야하기 때문에 babel.config.json 파일이 필요 그럼 알아서 babel.config.json파일을 babel이 읽게 된다.
+-> babel.config.json파일에서 preset은 거대한 플러그 인이고 preset-env는 최신자바스크립트를 쓸 수 있게 해준다.
+
+
+
+모든 설치는 node_modules 폴더에 된다. package.json은 그저 텍스트파일일 뿐이다.
+
+devDependencies - 개발자에게 필요한 dependencies. bable은 최신문법코드 작성을 위해서 개발자에게 필요하므로 devdependencies에 들어가는 것! ex) 운전자를 위한 음악
+dependencies - 프로젝트를 실행하기 위해 필요한 dependencies ex) 운전을 위한 차에 필요한 가솔린
+
+devDependencies에 저장하기 위해서는 yarn add --save-dev @babel/core에서 처럼 --save-dev를 추가해주어야한다.
+
+nodemon
+-> npm install @babel/node --save-dev
+-> package.json에서 script수정 "dev" : "babel-node index.js" -> dev룰 실행하면 babel이 같이 적용되며서 node가 실행
+-> 코드를 새로 쓸떄마다 다시 실행하는게 귀찮 -> nodemon 설치
+script 수정 -> nodemon -exec 를 앞에 추가 
  -->
