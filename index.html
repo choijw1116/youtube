@@ -40,3 +40,69 @@ nodemon
 -> 코드를 새로 쓸떄마다 다시 실행하는게 귀찮 -> nodemon 설치
 script 수정 -> nodemon -exec 를 앞에 추가 
  -->
+<!-- 
+HTTP method
+HTTP - 서버와 소통하는 방법 유저들이 페이지에 접속하려고 할떄 http request를 브라우저가 대신해서 만들어준다.
+즉 http request는 웹사이트에 접속하고 서버에 정보를 보내는 방법이다. 
+GET - http의 많은 method 중의 하나. 페이지를 가져오는것. 브라우저가 유저를 대신해 웹사이트에 request를 보내고 페이지를 가져오는 것.
+
+Request & Response
+브라우저가 /,/login,/profile 등등 해당 route로 가고싶다고 나의 서버에 request를 보내면 1. 해당 request를 먼저 받고, 2. 해당 request에 대한 response를 보내주어야한다.
+request - 유저에게 무언가 요청하거나, 보내거나, 무슨행동을 하는것. ex) 브라우저가 홈페이지를 달라고 request
+response - 어떤 행동을 보내거나 요청했을때 그에 대한 response.
+
+express의 route에 대해 이해해보자
+vanillaJS에서는
+
+const handleClick(event){
+    asdasdas
+}
+
+a.addEventListener('click', handleClick)
+-> 여기서 우리는 handleClick에 event가 있다는걸 안다.
+-> frontend에서 브라우저가 handleClick을 인식하고 click이 발생하면 handleClick()을 불러내서 event를 자동으로 집어넣어준다, 우리가 직접 넘겨주지않아도! (handleCLick(event))->이런식으로 
+EventListener는 handler(이경우 handleClick을말함)가 있고, handler에는 event가 있다.
+
+express에서는 route handler에는 event가 없는 대신 2개의 object가 있다. 
+
+const handler = (req,res) => ㅁㄴㅇㅁㄴㅇㅁㅇ
+
+app.get('/',handler)
+
+handler의 첫번째 argument는 request object, 두번째 argument는 response object다. 이 두개의 object는 express가 자동으로 실행하는것
+
+즉, 브라우저가 서버에게 '/'즉 home으로 get request가 오면 express는 handler에게 request object, response object를 주는것 -> app.get('/', handler({request},{response})) 이런식으로! eventlistener와 같이!
+
+request를 받았으면 response를 return 해주어야한다.
+res.end() - request를 끝내는 방법 중 하나
+res.send() - response를 보내는 방법 중 하나
+
+
+middleware
+middleware - middle software와 같은말. 중간에 있는 소프트웨어. request와 response 사이에서 존재한다. 브라우저가 request를 한 다음에 response하기 전에 middleware가 존재. 모든 handler는 middleware다
+
+middleware = controller -> 즉 모든 controller는 middleware이다
+
+원래 controller에는 두개의 argument말고도 next라는 argument가 있다
+next argument는 다음 함수를 호출해준다.
+ex)
+const handleHome = (req, res, next) => {
+    return res.end()
+}
+
+모든 controller는 middleware가 될 수 있고, next()를 호출하지 않고 request에 응답하게 되면 next()로 넘어가지 않는다.
+ ex)
+ const handler = (req, res, next) =<> {
+    return res.send('middleware')
+    next() -> next()는 실행되지 않고 return 문에서 끝나버린다.
+ }
+따라서 next()를 호출하면 middleware인것! middleware는 request에 응답하지 않는다. request를 지속시켜준다
+    
+
+app.use() 는 global middlware를 만들 수 있게 해준다. 즉, 어느 URL에도 작동하는 middleware를 만들 수 있게 해준다,
+순서가 매우 중요한데 app.use가 먼저 그다음이 app.get이 와야한다. app.use(middlware)를 위에 두면 모든 route에 적용된다.
+
+
+Router
+controller와 URL관리를 쉽게해준다. 미니어플리케이션을 만드는것과 같다
+ -->
