@@ -1,0 +1,14 @@
+//- doctype html라우터를 사용
+//- 모든건 소문자로 작성하고, 속성이 있다면 괄호안에 작성한다.
+//- 모든건 부모속성보다 2칸이나 탭으로 안쪽에 있어야한다.
+doctype html
+html(lang="ko")
+    head
+        title #{pageTitle} | youtube
+        link(rel="stylesheet" href="https://unpkg.com/mvp.css@1.12/mvp.css")
+    body
+        header     
+            h1=pageTitle
+        main 
+            block content
+    include partials/footer.pug
