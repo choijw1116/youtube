@@ -1,0 +1,12 @@
+extends base.pug
+
+block content
+    if errorMessage     
+        span=errorMessage
+    form(method="POST")
+        //- req.body로 input의 data를 얻기 위해서는 name을 꼭 설정해줘야한다!
+        input(placeholder="Tilte", required, type="text", name="title",maxLength=80)
+        input(placeholder="Description", required type="text" name="description" minLength=20)
+        input(placeholder="Hashtags, seperated bvy comma.", required type="text" name="hashtags")
+        input(type="submit", value="Upload Video")
+        
