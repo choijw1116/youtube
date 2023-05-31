@@ -1,14 +1,10 @@
 import Video from "../models/Video"; //video model파일을 import
 
 export const home = async (req, res) => {
-  //   res.send("Homepage videos ");
-  try {
-    const videos = await Video.find({}).sort({ createdAt: "desc" }); //데이터가 완전히 전송되는 것을 기다려아함.
-    return res.render("home", { pageTitle: "Home", videos }); //pug로 사용하는 방법. 첫번째 인자로 보여줄 view의 이름을 적는다. 우리의 경우 home화면이므로 home을 적어준다. 그러면 home.pug 파일을 렌더링 해줄 수 있다.
-  } catch (error) {
-    return res.render("server-error");
-  }
+  const videos = await Video.find({}).sort({ createdAt: "desc" });
+  return res.render("home", { pageTitle: "Home", videos });
 };
+
 export const watch = async (req, res) => {
   //   const id = req.params.id; //아래 ES6와 같은 의미
   const { id } = req.params; //video의 id 얻기
@@ -25,7 +21,7 @@ export const getEdit = async (req, res) => {
   // const video = videos[id - 1]; //video arr의 n번째
   const video = await Video.findById(id);
   if (!video) {
-    return res.render("404", { pageTitle: "Video Not Found" });
+    return res.status(404).render("404", { pageTitle: "Video Not Found" });
   }
   return res.render("edit", { pageTitle: `Editing: ${video.title} `, video });
 };
@@ -37,7 +33,7 @@ export const postEdit = async (req, res) => {
   const video = await Video.exists({ _id: id }); //영상검색 -> 영상이 존재하는지 확인해야하는데 video object를 굳이 가져올 필요가 없으므로 findById를 exist()로 대체할 수 있다. object의 id가 req.params의 id와 같은 경우를 찾는다는 의미이다.
   if (!video) {
     //영상존재확인 후 없으면 404렌더링
-    return res.render("404", { pageTitle: "Video Not Found" });
+    return res.status(404).render("404", { pageTitle: "Video Not Found" });
   }
   //영상정보업데이트
   //findByIdAndUpdate() - 첫번째 인자에 id를 넣어준다. 두번째 인자에는 업데이트할 정보나 내용을 넣어준다.
@@ -94,7 +90,7 @@ export const postUpload = async (req, res) => {
     });
     return res.redirect("/");
   } catch (error) {
-    return res.render("upload", {
+    return res.status(400).render("upload", {
       pageTitle: "upload video",
       errorMessage: error._message,
     });

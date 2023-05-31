@@ -1,0 +1,253 @@
+<!-- 
+
+session
+이 middleware가 사이트로 들어오는 모두를 기억하는 역할
+위에 있는 express-session에서 주어진것
+브라우저가 backend와 상호작용할때마다 하단의 session middleware가 브라우저에 cookie를 전송한다.
+
+cookie
+backend가 나의 브라우저에 주는 정보
+cookie에는 정해진 규칙이 있어서 매번 backend에 request할때 브라우저가 알아서 request에 cookie를 덧붙이게된다.
+cookie에는 어떤정보든 넣을 수 있다.
+여기서는 sessionID를 넣어준다 -> http를 사용하고 있기 때문에 브라우저와 backend와의 연결이 평생보장될 수 없기 때문
+cookie와 session은 별개의 개념이다.
+cookie는 정보를 주고받는 방법일 뿐이다.
+cookie의 장점은 자동적으로 처리된다는 점이다. cookie를 받고 보내는 과정에서 사용자는 아무것도 하지 않아도 된다.
+
+http
+stateless상태
+ex) homepage를 들어가면 connection이 열리고 render가 끝나면 connection이 끊어진다. connection이 계속 유지되지 않는다.
+브라우저와 backend는 살아있는 connection이 없어서 render가 끝나거나 redirect가 발생하거나 POST request를 보내거나 응답없음을 받으면 connection은 바로 끝난다.
+
+즉, session이 브라우저에 cookie를 보내고 브라우저는 cookie로 뭘할지 어디에 넣을지 알고있다.
+ 브라우저는 매번 backend localhost에 있는 URL로 request를 보낼떄마다 cookie가 request랑 같이 전송된다는 것도 알고 있다.
+ sessionID는 브라우저에서 볼 수 있다. 콘솔에 Application 탭에 sessioin ID를 볼 수 있다,
+ 브라우저는 session ID가 포함된 cookie를 가지고 있고, backend는 사용중인 session ID를 기억하고 있다.
+
+backend
+생성된 모든 session ID를 관리하는 곳이다.
+4명의 user가 있다면 session store에 4개의 session이 있는것
+
+session store
+session을 저장하는곳
+
+사용자가 로그인할때
+user가 로그인을 하면 userController에서 발생하는데 
+
+export const getLogin = (req, res) => {
+  res.render("login", { pageTitle: "Login" });
+};
+export const postLogin = async (req, res) => {
+
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  const pageTitle = "Login";
+
+  //계정이 존재하는지 체크
+  if (!user) {
+    return res.status(400).render("login", {
+      pageTitle,
+      errorMessage: "An account with this username does not exists",
+    });
+  }
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) {
+    return res.status(400).render("login", {
+      pageTitle,
+      errorMessage: "Wrong Password",
+    });
+  }
+
+  
+  req.session.loggedIn = true;
+  req.session.user = user; //DB에서 찾은 user를 담아줌
+  console.log("LogIn Coming Soon");
+  return res.redirect("/");
+};
+
+req.session에 몇가지 정보를 덧붙인다. req.session은 브라우저랑 시크릿모드에 있는거랑 다르다. 즉, 브라우저마자 다른 결고값이 나온다는 것이다.
+브라우저마다 req.session이 다르기 때문에 몇몇정보를 req.session object에 덧붙이는 것이다. session이 object로 이루어져 있기 때문에 원하는 정보를 추가하기 쉽다.
+
+  req.session.loggedIn = true;
+  req.session.user = user; //DB에서 찾은 user를 담아줌
+  console.log("LogIn Coming Soon");
+
+여기에는 두가지를 추가했는데 하나는 사용자가 로그인하면 loggedIn을 true로 하고 다른하나는 우리가 DB에서 찾은 user의 데이터(req.session.user)를 user에 넣어주는것이다.
+
+req.session에 정보를 담아주었기 떄문에 controller어디에서나 session 정보를 사용할 수 있다.
+
+
+Localsmiddleware
+base.pug파일을 보면 loggedInUser.name을 추가했고, loggedIn을 변수로 넣었는데 loggedIn 변수를 render하지않았다.
+render function을 실행할때 변수를 보내지 않았다는 뜻이다. 따로 localsMiddleware를 만들었기 때문이다.
+
+locals
+locals는 뭐든 할 수 있는 object이다. locals object안에 추가, 제거 뭐든 가능하다. 또한 template이 locals object에 접근할 수 있다.pug와 express애 이미 설정되어있기 때문이다.
+
+export const localsMiddleware = (req, res, next) => {
+  res.locals.loggedIn = Boolean(req.session.loggedIn);
+  res.locals.siteName = "Youtube";
+  res.locals.loggedInUser = req.session.user;
+  next();
+};
+
+위 res.locals.loggedIn, res.locals.siteName, res.locals.loggedInUser 3가지를 locals object에 넣는다면 pug templates 어디에서든 접근이 가능하다.import 나 render가 필요없다. locals안에 넣어준다면 pug template에서 다 쓸 수 있다.
+
+Session
+session data는 쿠키 안에 저장되지 않고, session ID만 쿠키에 저장된다. Session data는 서버에 저장된다. 서버에 저장되는 defaul session storage는 memoryStore이며 실제 사용하기 위해 있는 것은 아니다.
+따라서 session store를 사용해 session을 database에 저장해야하는 것이다.\
+
+우리는 connect-mongo를 사용해 세션을 MongoDB에 저장할 것이다. 서버를 재시작하더라도 session은 database에 저장되어있기 때문에 누군가 로그인되어있더라고 잊어버리지 않을 것이다.
+
+우선 connect-mongo를 설치해보자.
+npm i connect-mongo
+
+//server.js
+import MongoStore from "connect-mongo"
+
+다음 Mongo database의 URL을 가지고 있는 configuration object를 만들어야한다. db.js파일에 가면 mongodb의 주소를 이미 알고있다.
+
+session middleware는 option이 하나있는데 바로 store다. default로 설정된것과는 다른 store를 설정할 수 있다.
+
+server.js파일에 가서 session 부분에 mongoStore.create()를 해주자. mongoStore.create()에 필요한 option은 MongoDB의 url이다. 사실 db url을 복붙하는 것은 별로 좋지는 않다.일단 url을 넣어준 후 수정해주자.
+
+//server.js
+app.use(
+  session({
+    secret: "Hello",
+    resave: true,
+    saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: "mongodb://127.0.0.1:27017/youtube",
+    }),
+  })
+);
+
+Mongo DB로 가보면 아무것도 들어있지 않다. 
+그렇다면 세션은 어떻게 만들까?
+세션은 브라우저가 우리의 backend를 방문할때 만들어진다. localhost를 새로고침해보자. db에 session이 저장되어 서버를 껐다켜도 session이 재시작하지 않을 것이다.
+
+
+session의 resave, saveUninitialized의 차이점
+브라우저에 방문하는 모든 사용자에 대해 쿠키를 만들어주고 세션을 만드는데 user에게 쿠키를 주고 session은 DB에 저장한다. 만약 실user가 아닌 가짜 user가 들어오거나 로그인하지 않고 구경만 하는 사용자들이 방문한다면 어떻게해야할까? 우리는 실사용자들만 저장하고싶다. 현재는 실사용자 가짜사용자 상관없이 방문하는 모든사람에 대해 쿠키와 session을 만들고 이 session을 db에 저장하고 있다. 
+
+로그인한 사용자의 session만 저장하고싶다면 어떻게 해야할까?
+session의 resavedhk saveUninitialized를 false로 수정해보자. 전과는 다르게 방문만 한 사용자에 대한 쿠키는 저장되지 않는것을 확인할 수 있다. 
+
+saveUninitialized는 세션이 새로 만들어지고 수정된적이 없을때를 말한다. 새로운 세션이 있는데 수정된적이 없으면 uninitialized인것. 세션을 수정할때만 세션을 DB에 저장하고 쿠키를 넘겨주는 역할을 한다. 우리는 backend가 로그인한 사용자에게만 쿠키를 주도록 설정했다.
+
+session의 secret은 쿠키에 sing할때 사용하는 string이다. 쿠키에 sign하는 이유는 backend가 쿠키를 줬다는 것을 보여주기 위함이다. session hijack이라는 공격이 있는데 누군가 쿠키를 훔쳐 본인인척 할 수 있기 때문이다. secret은 string으로 이루어져있으므로 길고 무작위하게 만들어야한다. secret의 string을 가지고 쿠키를 sign하고 증명할 수 있기 때문이다.
+
+session인증의 문제점
+backend가 DB에 저장하는 것이 문제점 중 하나 -> 이를 위한 해결책 token authentication
+ios나 안드로이드앱을 만들때 쿠키를 갖지 않기 때문에 token을 사용한다.
+
+브라우저에서 인증하는 것은 쿠키를 이용해서 세션인증이 가능하다.
+
+세션은 어디서 수정할까?
+세션은 userController에서 수정할 수 있다. userController에 postLogin부분에 req.session.loggedIn, req.session.user 부분이 실제로 세션을 initialize하는 부분인 것이다.
+
+
+
+Cookie의 property
+
+app.use(
+  session({
+    secret: "Hello", //쿠키에 sign할때 사용하는 string
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: "mongodb://127.0.0.1:27017/youtube",
+    }), //db에 세션이 저장되도록해준다.
+  })
+);
+
+secret : 쿠키에 sign할때 사용하는 string. cookie에 sign하는 이유는 backend가 쿠키를 줬다는 것을 보여주기 위함이다. session hijack이라는 공격은 나의 쿠키를 훔쳐서 나인척 할 수 있기 때문에 이를 보호하기 위해 쿠키를 줬다는 것을 보여주어야한다. secret은 길고 강력하고 무작위하게 만들어주어야한다. secret string을 가지고 쿠키를 sign하고 우리가 만든것임을 증명할 수 있기 떄문이다.
+Name
+Value
+Domain : 쿠키가 만든 backend가 누구인지 알려준다. 브라우저는 domain에 따라 쿠키를 저장하도록 되어있다. 그리고 쿠키는 Domain에 있는 backend로만 전송된다.
+ex) localhost:4000에서 user에게 쿠키를 줌. Domain은 localhost로 되어있고 우리가 어떤 요청을 하던간에 쿠키가 localhost로 전송된다. 즉 내 localhost는 facebook이나 youtube의 쿠키를 받지 않는것이다. Youtube의 쿠키는 youtube.com으로 가고 facebook의 쿠키는 facebook.com으로 간다. 브라우저가 이 규칙을 지키는 것이다.
+즉, Domain은 쿠키가 어디서왔는지 어디로 가야하는지 알려주는것.
+Path : URL을 의미
+Expires / Max-Age : 만료날짜를 지정하지 않으면 session cookie로 설정되고 사용자가 페이지를 닫거나 컴퓨터가 재시작할때 session cookie는 끝나게된다. user가 닫지않는한 계속 살아있다.
+Max-Age는 언제 세션이 만료되는지 알려주는 것이다.
+app.use(
+  session({
+    secret: "Hello", //쿠키에 sign할때 사용하는 string
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 20000, //20초
+    },
+    store: MongoStore.create({
+      mongoUrl: "mongodb://127.0.0.1:27017/youtube",
+    }), //db에 세션이 저장되도록해준다.
+  })
+Max-Age의 값은 1/1000초 단위로 쓰면된다.
+);
+Size
+HttpOnly
+Secure
+SameSite
+Priority
+
+
+.env
+app.use(
+  session({
+    secret: "Hello", //쿠키에 sign할때 사용하는 string
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: "mongodb://127.0.0.1:27017/youtube",
+    }), //db에 세션이 저장되도록해준다.
+  })
+);
+
+위 코드를 보면 secret과 store의 url은 다른사람이 보면 안되는 값이므로 보여지는 코드에 적혀있으면 안된다. 모든 API key나 모든 비밀로 해야하는 url 같은것들을 보호하기 위해서 가장 최상단에 environment file(환경변수 즉, .env)를 만들어준다. 그리고 .gitignore파일에 .env를 추가해준다.
+
+.gitignore
+/node_modules
+.env //깃헙에 올리면 안되므로
+
+.env
+//env파일에는 대문자로 적어주어야한다.
+COOKIE_SECRET=sdfsfefxdf126fr9asdasd
+DB_URL=mongodb://127.0.0.1:27017/youtube
+
+.env파일을 만들어 secret과 dburl을 숨겨놓았으면 가져다 사용할떄는 process.env.DB_URL 이렇게 사용해주면 된다.
+
+server.js
+app.use(
+  session({
+    secret: process.env.COOKIE_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.DB_URL,
+    }), //db에 세션이 저장되도록해준다.
+  })
+);
+
+그런데 에러가 발생한다. process.env를 console.log로 찍어보면 엄청나게 많은 변수들이 나오는데 nodeJS process의 환경이 찍혀나온다.
+
+dotenv
+
+dotenv는 여러가지 언어로 구현되어있다. npm i dotenv로 설치 후 
+
+require('dotenv').config()
+
+를 넣어주기만 하면된다. 나의 application안에서 최대한 먼저 넣어주면된다. dotenv는 파일을 읽고 최대한 빨리 env를 load해 추가해주어야하기 때문에 가장 최상단에 넣어주는 것이 좋다. 내 app을 보면 init.js를 가장 먼저 load해주므로 init.js의 최상단에 require('dotenv').config()를 넣어주자.
+
+하지만 에러가 해결되지 않는 것을 볼 수 있는데 require를 import하는 방법이 잘못되었단것을 알 수 있다. require를 import하기 위해서는 require~~를 사용하고 싶은 모든 파일에 require를 추가해주어야한다. 하지만 이는 매우 번거로운 방법이므로 require를 import하는 부분을 import "dotenv/config"; 로 대체해주자.
+
+init.js
+import "dotenv/config"
+.
+.
+.
+
+그럼 에러가 사라졌다!
+
+ -->
