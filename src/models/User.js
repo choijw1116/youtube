@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
+  avatarUrl: String,
   socialOnly: { type: Boolean, default: false }, //유저가 email로 로그인하려는데 pw가 없을때 유용
   username: { type: String, required: true, unique: true },
   password: { type: String },

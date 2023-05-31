@@ -160,6 +160,7 @@ export const finishGithubLogin = async (req, res) => {
       //해당 email이 없으므로 계정생성
       //User.create()는 새로 만든 user를 return 시켜준다
       user = await User.create({
+        avatarUrl: userData.avatar_url,
         name: userData.name,
         username: userData.login,
         email: emailObj.email,
@@ -179,14 +180,12 @@ export const finishGithubLogin = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  res.send("logout user");
+  req.session.destroy(); //세션없애기
+  return res.redirect("/");
 };
 
 export const editUser = (req, res) => {
   res.send("Edit user");
-};
-export const deleteUser = (req, res) => {
-  res.send("Delete user");
 };
 
 export const watch = (req, res) => {
